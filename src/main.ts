@@ -9,29 +9,58 @@ import {
   snapshotDatasets,
   statsDataUrl,
 } from './lib';
-import type { StatsTable } from './lib';
+import type { SeriesPoint, StatsTable } from './lib';
 
 const APP_ID_KEY = 'toukei-app-id';
 const STATS_ID_KEY = 'toukei-stats-id';
 
-// ---- 同梱スナップショットのカード ----
+// ---- 同梱スナップショットの指標 ----
 
 const snapshotGrid = document.getElementById('snapshot-grid')!;
 
+/** 直近の変化に応じた方向の矢印SVGと、増減のクラス名 */
+function trend(change: { diff: number; rate: number } | null): { svg: string; cls: string } {
+  if (change === null || change.diff === 0) {
+    return {
+      svg: '<svg class="trend-arrow" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6h8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+      cls: '',
+    };
+  }
+  const up = change.diff > 0;
+  const d = up ? 'M2 8 6 4l4 4' : 'M2 4 6 8l4-4';
+  return {
+    svg: `<svg class="trend-arrow" viewBox="0 0 12 12" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    cls: up ? 'up' : 'down',
+  };
+}
+
+function indicatorMarkup(
+  name: string,
+  unit: string,
+  source: string,
+  points: SeriesPoint[],
+): string {
+  const last = points[points.length - 1]!;
+  const change = latestChange(points);
+  const { svg, cls } = trend(change);
+  const changeText = formatChange(change);
+  const changeRow = changeText
+    ? `<p class="indicator-change ${cls}">${svg}<span>${escapeHtml(changeText)} ・ 前回比</span></p>`
+    : '';
+  return (
+    `<article class="indicator" data-reveal>` +
+    `<p class="indicator-name">${escapeHtml(name)}</p>` +
+    `<p class="indicator-value"><span class="num">${escapeHtml(formatValue(last.value, ''))}</span>` +
+    `<span class="unit">${escapeHtml(unit)}</span></p>` +
+    changeRow +
+    `<div class="chart-wrap">${renderLineChart([{ label: name, points }], unit)}</div>` +
+    `<p class="source">${escapeHtml(last.time)}時点 ・ ${escapeHtml(source)}</p>` +
+    `</article>`
+  );
+}
+
 snapshotGrid.innerHTML = snapshotDatasets
-  .map((dataset) => {
-    const last = dataset.points[dataset.points.length - 1]!;
-    const change = formatChange(latestChange(dataset.points));
-    return (
-      `<article class="card snapshot-card">` +
-      `<h2>${escapeHtml(dataset.name)}</h2>` +
-      `<p class="latest"><strong>${escapeHtml(formatValue(last.value, dataset.unit))}</strong>` +
-      `<span class="latest-meta">${escapeHtml(last.time)}時点${change ? ` ・前回比 ${escapeHtml(change)}` : ''}</span></p>` +
-      `<div class="chart-wrap">${renderLineChart([{ label: dataset.name, points: dataset.points }], dataset.unit)}</div>` +
-      `<p class="source">${escapeHtml(dataset.source)}</p>` +
-      `</article>`
-    );
-  })
+  .map((d) => indicatorMarkup(d.name, d.unit, d.source, d.points))
   .join('');
 
 // ---- e-Statライブ取得 ----
@@ -108,3 +137,24 @@ themeToggle.addEventListener('click', () => {
 });
 
 applyTheme(localStorage.getItem(THEME_KEY));
+
+// ---- スクロール出現(reduced-motionでは即表示) ----
+
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const revealEls = [...document.querySelectorAll('[data-reveal]')];
+if (!reducedMotion.matches && 'IntersectionObserver' in window) {
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          io.unobserve(entry.target);
+        }
+      }
+    },
+    { threshold: 0.1, rootMargin: '0px 0px -6% 0px' },
+  );
+  for (const el of revealEls) io.observe(el);
+} else {
+  for (const el of revealEls) el.classList.add('is-visible');
+}

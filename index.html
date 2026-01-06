@@ -7,20 +7,33 @@
       name="description"
       content="日本の主要統計の推移を同梱スナップショットで一覧し、e-Stat APIのappIdを入れると任意の統計表をライブ取得して可視化できるダッシュボード"
     />
+    <meta name="color-scheme" content="light dark" />
     <title>toukei - 日本の統計ダッシュボード</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script>
+      // 描画前にテーマを確定してFOUCを防ぐ。明示指定が無ければOS設定に委ねる。
+      (function () {
+        var d = document.documentElement;
+        d.classList.add('js');
+        try {
+          var t = localStorage.getItem('toukei-theme');
+          if (t === 'light' || t === 'dark') d.setAttribute('data-theme', t);
+        } catch (e) {
+          /* localStorageが使えなくてもOS設定で表示する */
+        }
+      })();
+    </script>
   </head>
   <body>
     <header class="app-header">
-      <div class="brand">
+      <a class="brand" href="https://github.com/miruky/toukei" rel="noopener">
         <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
           <g stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none">
             <path d="M5 27V14M13 27V6M21 27v-9M29 27V11" />
           </g>
         </svg>
-        <h1>toukei</h1>
-        <p class="tagline">e-Statで見る日本の統計</p>
-      </div>
+        <span class="brand-name">toukei</span>
+      </a>
       <button
         id="theme-toggle"
         class="icon-button"
@@ -48,21 +61,34 @@
     </header>
 
     <main class="app-main">
-      <section aria-label="主要指標">
-        <p class="section-note">
-          同梱スナップショット(公表値を丸めた概数)による主要指標。正確な値は各統計の公表資料を参照してください。
+      <section class="intro" data-reveal>
+        <p class="kicker">政府統計 / e-Stat</p>
+        <h1 class="intro-title">日本の統計を、<br />時系列で読む。</h1>
+        <p class="intro-lede">
+          人口・出生・雇用・物価といった主要指標の長期推移を一望し、e-Stat
+          APIのappIdを入れれば任意の統計表をその場で取得して同じ折れ線で描く。値は概数で、正確な数字は各統計の公表資料にあたってほしい。
         </p>
-        <div id="snapshot-grid" class="snapshot-grid"></div>
       </section>
 
-      <section class="card live-card" aria-label="e-Statライブ取得">
-        <h2>e-Statから任意の統計表を取得する</h2>
-        <p class="live-help">
-          <a href="https://www.e-stat.go.jp/api/" rel="noopener">e-Stat API</a>
-          の利用登録で得たappIdと、可視化したい統計表ID(statsDataId)を入力してください。
-          appIdはこのブラウザのlocalStorageにのみ保存されます。
-        </p>
-        <form id="live-form">
+      <section class="indicators-section" aria-label="主要指標">
+        <div class="section-head" data-reveal>
+          <p class="kicker">Indicators</p>
+          <h2>主要指標の推移</h2>
+          <p class="section-note">同梱スナップショット(公表値を丸めた概数)による長期の動き。</p>
+        </div>
+        <div id="snapshot-grid" class="indicator-grid"></div>
+      </section>
+
+      <section class="live-section" aria-label="e-Statライブ取得">
+        <div class="section-head" data-reveal>
+          <p class="kicker">Live API</p>
+          <h2>e-Statから統計表を取得する</h2>
+          <p class="live-help">
+            <a href="https://www.e-stat.go.jp/api/" rel="noopener">e-Stat API</a>
+            の利用登録で得たappIdと、可視化したい統計表ID(statsDataId)を入力する。appIdはこのブラウザのlocalStorageにのみ保存する。
+          </p>
+        </div>
+        <form id="live-form" data-reveal>
           <div class="field">
             <label for="app-id">appId</label>
             <input
@@ -92,7 +118,7 @@
     <footer class="app-footer">
       <p>
         出典: <a href="https://www.e-stat.go.jp/" rel="noopener">政府統計の総合窓口(e-Stat)</a>。
-        ライブ取得はe-Stat APIをブラウザから直接呼び出し、このサイトはデータを保存しません。
+        ライブ取得はe-Stat APIをブラウザから直接呼び出し、このサイトはデータを保存しない。
       </p>
     </footer>
     <script type="module" src="/src/main.ts"></script>
