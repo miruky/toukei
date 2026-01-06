@@ -16,6 +16,22 @@ export function latestChange(points: SeriesPoint[]): { diff: number; rate: numbe
   return { diff, rate: prev.value === 0 ? 0 : diff / prev.value };
 }
 
+/** 系列の要約統計(最小・最大・平均・最新)。空配列なら null */
+export function seriesStats(
+  points: SeriesPoint[],
+): { min: number; max: number; mean: number; latest: number } | null {
+  if (points.length === 0) return null;
+  let min = Infinity;
+  let max = -Infinity;
+  let sum = 0;
+  for (const p of points) {
+    if (p.value < min) min = p.value;
+    if (p.value > max) max = p.value;
+    sum += p.value;
+  }
+  return { min, max, mean: sum / points.length, latest: points[points.length - 1]!.value };
+}
+
 export function formatChange(change: { diff: number; rate: number } | null): string {
   if (!change) return '';
   const sign = change.diff > 0 ? '+' : '';
