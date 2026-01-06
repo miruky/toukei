@@ -78,12 +78,24 @@ export function renderLineChart(series: Series[], unit = ''): string {
     )
     .join('');
 
+  // 単一系列のときだけ線の下を薄く塗る。多系列だと面が重なって読みにくい
+  const areaFill = drawable.length === 1;
+  const baseline = H - PAD.bottom;
   const lines = drawable
     .map((s, si) => {
       const cls = SERIES_CLASSES[si]!;
-      const pts = s.points
-        .map((p) => `${x(timeIndex.get(p.order)!).toFixed(1)},${y(p.value).toFixed(1)}`)
-        .join(' ');
+      const coords = s.points.map(
+        (p) => [x(timeIndex.get(p.order)!), y(p.value)] as [number, number],
+      );
+      const pts = coords.map(([cx, cy]) => `${cx.toFixed(1)},${cy.toFixed(1)}`).join(' ');
+      const first = coords[0]!;
+      const last = coords[coords.length - 1]!;
+      const area =
+        areaFill && coords.length > 1
+          ? `<path class="chart-area ${cls}" d="M${first[0].toFixed(1)} ${baseline}` +
+            coords.map(([cx, cy]) => `L${cx.toFixed(1)} ${cy.toFixed(1)}`).join('') +
+            `L${last[0].toFixed(1)} ${baseline}Z"/>`
+          : '';
       const dots = s.points
         .map(
           (p) =>
@@ -91,7 +103,9 @@ export function renderLineChart(series: Series[], unit = ''): string {
             `cy="${y(p.value).toFixed(1)}" r="3"><title>${s.label} ${p.time}: ${p.value.toLocaleString('ja-JP')}${unit}</title></circle>`,
         )
         .join('');
-      return `<polyline class="chart-line ${cls}" points="${pts}"/>${dots}`;
+      // 最新点を強調する淡いハロー(点の数には数えない別要素)
+      const halo = `<circle class="chart-last ${cls}" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="5.5"/>`;
+      return `${area}<polyline class="chart-line ${cls}" points="${pts}"/>${halo}${dots}`;
     })
     .join('');
 
