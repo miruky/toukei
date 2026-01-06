@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { escapeHtml, formatChange, formatValue, latestChange } from './format';
+import { escapeHtml, formatChange, formatValue, latestChange, seriesStats } from './format';
 
 const pts = (...values: number[]) =>
   values.map((value, i) => ({ time: String(2020 + i), order: String(2020 + i), value }));
@@ -26,6 +26,25 @@ describe('latestChange / formatChange', () => {
   it('1点以下では変化なし', () => {
     expect(latestChange(pts(100))).toBeNull();
     expect(formatChange(null)).toBe('');
+  });
+});
+
+describe('seriesStats', () => {
+  it('最小・最大・平均・最新を求める', () => {
+    expect(seriesStats(pts(100, 120, 80, 110))).toEqual({
+      min: 80,
+      max: 120,
+      mean: 102.5,
+      latest: 110,
+    });
+  });
+
+  it('1点でも成り立つ', () => {
+    expect(seriesStats(pts(42))).toEqual({ min: 42, max: 42, mean: 42, latest: 42 });
+  });
+
+  it('空配列はnull', () => {
+    expect(seriesStats([])).toBeNull();
   });
 });
 
