@@ -6,6 +6,7 @@ import {
   latestChange,
   parseStatsData,
   renderLineChart,
+  seriesStats,
   snapshotDatasets,
   statsDataUrl,
 } from './lib';
@@ -47,6 +48,14 @@ function indicatorMarkup(
   const changeRow = changeText
     ? `<p class="indicator-change ${cls}">${svg}<span>${escapeHtml(changeText)} ・ 前回比</span></p>`
     : '';
+  const stats = seriesStats(points);
+  const statsRow = stats
+    ? `<dl class="indicator-stats">` +
+      `<div><dt>最小</dt><dd class="num">${escapeHtml(formatValue(stats.min, ''))}</dd></div>` +
+      `<div><dt>平均</dt><dd class="num">${escapeHtml(formatValue(Math.round(stats.mean * 100) / 100, ''))}</dd></div>` +
+      `<div><dt>最大</dt><dd class="num">${escapeHtml(formatValue(stats.max, ''))}</dd></div>` +
+      `</dl>`
+    : '';
   return (
     `<article class="indicator" data-reveal>` +
     `<p class="indicator-name">${escapeHtml(name)}</p>` +
@@ -54,7 +63,8 @@ function indicatorMarkup(
     `<span class="unit">${escapeHtml(unit)}</span></p>` +
     changeRow +
     `<div class="chart-wrap">${renderLineChart([{ label: name, points }], unit)}</div>` +
-    `<p class="source">${escapeHtml(last.time)}時点 ・ ${escapeHtml(source)}</p>` +
+    statsRow +
+    `<p class="source">${escapeHtml(last.time)}時点 ・ ${escapeHtml(source)}・期間の最小／平均／最大</p>` +
     `</article>`
   );
 }
