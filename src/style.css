@@ -277,6 +277,39 @@ body {
   flex: none;
 }
 
+.indicator-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.indicator-stats div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.indicator-stats div + div {
+  padding-left: 12px;
+  border-left: 1px solid var(--line);
+}
+
+.indicator-stats dt {
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  color: var(--faint);
+}
+
+.indicator-stats dd {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .indicator .source {
   font-size: 0.72rem;
   color: var(--faint);
